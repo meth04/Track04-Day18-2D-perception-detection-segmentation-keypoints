@@ -15,30 +15,30 @@
   "latency": [
     {
       "Cấu hình": "one-to-many + NMS, conf 0.25",
-      "preprocess (ms)": 1.82,
-      "inference (ms)": 9.74,
-      "postprocess (ms)": 1.26,
+      "preprocess (ms)": 3.6,
+      "inference (ms)": 26.36,
+      "postprocess (ms)": 3.26,
       "số box": 5
     },
     {
       "Cấu hình": "one-to-many + NMS, conf 0.001",
-      "preprocess (ms)": 1.76,
-      "inference (ms)": 9.89,
-      "postprocess (ms)": 1.45,
+      "preprocess (ms)": 3.18,
+      "inference (ms)": 20.99,
+      "postprocess (ms)": 2.92,
       "số box": 203
     },
     {
       "Cấu hình": "one-to-one NMS-free, conf 0.25",
-      "preprocess (ms)": 1.71,
-      "inference (ms)": 9.7,
-      "postprocess (ms)": 0.44,
+      "preprocess (ms)": 3.19,
+      "inference (ms)": 20.22,
+      "postprocess (ms)": 1.15,
       "số box": 5
     },
     {
       "Cấu hình": "one-to-one NMS-free, conf 0.001",
-      "preprocess (ms)": 1.74,
-      "inference (ms)": 9.88,
-      "postprocess (ms)": 0.45,
+      "preprocess (ms)": 4.26,
+      "inference (ms)": 26.09,
+      "postprocess (ms)": 1.19,
       "số box": 204
     }
   ],
@@ -49,9 +49,20 @@
     "Box mAP50-95": 0.9303488492063492,
     "Pose mAP50": 0.995,
     "Pose mAP50-95": 0.4573462529843696,
-    "train (phút)": 4.4
+    "train (phút)": 4.3
   },
-  "result_4c": null,
+  "result_4c": [
+    {
+      "Model": "flip_idx giải phẫu",
+      "Pose mAP50-95 — val gốc": 0.4573462529843696,
+      "Pose mAP50-95 — val lật gương": 0.43884777970456634
+    },
+    {
+      "Model": "flip_idx đồng nhất",
+      "Pose mAP50-95 — val gốc": 0.4169217121481716,
+      "Pose mAP50-95 — val lật gương": 0.29772304416546624
+    }
+  ],
   "answers": {
     "Q1": "(a) Với ảnh letterbox 640×480, ba feature map có kích thước 80×60, 40×30 và 20×15\n\nTổng số dự đoán thô:\n80×60 + 40×30 + 20×15 = 6300\n\nNó ít hơn 8400 của ảnh 640×640 vì chiều rộng chỉ còn 480, do đó số vị trí trên cả ba feature map đều giảm\n\n(b) Nếu box bị lệch sang phải và xuống dưới đúng nửa kích thước, nhãn gốc là cxcywh nhưng đã bị đọc nhầm thành xywh.",
     "Q2": "Cột thay đổi nhiều nhất là postprocess, đặc biệt ở conf = 0.001. Với one-to-many, khi confidence thấp số candidate box tăng rất mạnh,\ndo đó NMS phải xử lý nhiều box hơn.\nOne-to-one không cần NMS nên chi phí postprocess thấp hơn. Lợi ích NMS-free càng rõ ở cảnh đông và trên CPU/NPU, nơi NMS thường đắt hơn tương đối so với các tensor operation.",
