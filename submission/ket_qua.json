@@ -1,0 +1,74 @@
+{
+  "progress": {
+    "box_iou": "ok",
+    "nms": "ok",
+    "batched_nms": "ok",
+    "average_precision": "ok",
+    "mask_iou": "ok",
+    "polygon_to_mask": "ok",
+    "mask_to_yolo_seg": "ok",
+    "autolabel": "ok",
+    "oks": "ok",
+    "joint_angle": "ok",
+    "FLIP_IDX": "ok"
+  },
+  "latency": [
+    {
+      "Cấu hình": "one-to-many + NMS, conf 0.25",
+      "preprocess (ms)": 1.82,
+      "inference (ms)": 9.74,
+      "postprocess (ms)": 1.26,
+      "số box": 5
+    },
+    {
+      "Cấu hình": "one-to-many + NMS, conf 0.001",
+      "preprocess (ms)": 1.76,
+      "inference (ms)": 9.89,
+      "postprocess (ms)": 1.45,
+      "số box": 203
+    },
+    {
+      "Cấu hình": "one-to-one NMS-free, conf 0.25",
+      "preprocess (ms)": 1.71,
+      "inference (ms)": 9.7,
+      "postprocess (ms)": 0.44,
+      "số box": 5
+    },
+    {
+      "Cấu hình": "one-to-one NMS-free, conf 0.001",
+      "preprocess (ms)": 1.74,
+      "inference (ms)": 9.88,
+      "postprocess (ms)": 0.45,
+      "số box": 204
+    }
+  ],
+  "result_4b": {
+    "flip_idx": "giải phẫu",
+    "epochs": 40,
+    "imgsz": 640,
+    "Box mAP50-95": 0.9303488492063492,
+    "Pose mAP50": 0.995,
+    "Pose mAP50-95": 0.4573462529843696,
+    "train (phút)": 4.4
+  },
+  "result_4c": null,
+  "answers": {
+    "Q1": "(a) Với ảnh letterbox 640×480, ba feature map có kích thước 80×60, 40×30 và 20×15\n\nTổng số dự đoán thô:\n80×60 + 40×30 + 20×15 = 6300\n\nNó ít hơn 8400 của ảnh 640×640 vì chiều rộng chỉ còn 480, do đó số vị trí trên cả ba feature map đều giảm\n\n(b) Nếu box bị lệch sang phải và xuống dưới đúng nửa kích thước, nhãn gốc là cxcywh nhưng đã bị đọc nhầm thành xywh.",
+    "Q2": "Cột thay đổi nhiều nhất là postprocess, đặc biệt ở conf = 0.001. Với one-to-many, khi confidence thấp số candidate box tăng rất mạnh,\ndo đó NMS phải xử lý nhiều box hơn.\nOne-to-one không cần NMS nên chi phí postprocess thấp hơn. Lợi ích NMS-free càng rõ ở cảnh đông và trên CPU/NPU, nơi NMS thường đắt hơn tương đối so với các tensor operation.",
+    "Q3": "(a) Vì IoU = 0.75 > 0.7 nên NMS có thể loại box có score thấp hơn, dù đó thực sự là một người khác, gây false negative.\n\nTăng threshold giúp giữ các object đứng sát nhau nhưng có nguy cơ giữ duplicate. Giảm threshold loại duplicate mạnh hơn nhưng dễ xóa nhầm object thật.\n\n(b) One-to-many tạo nhiều positive sample cho mỗi object nên cung cấp tín hiệu huấn luyện dày và ổn định hơn.\n\nOne-to-one có supervision thưa hơn nhưng phù hợp inference NMS-free. YOLO26 dùng cả hai để tận dụng ưu điểm của one-to-many khi train và one-to-one khi deploy.",
+    "Q4": "(a) Semantic segmentation chỉ gán class cho pixel chứ không có instance ID.\n\nHai người chạm hoặc che nhau có thể nối thành một vùng liên thông, gây đếm thiếu.\n\nMột người cũng có thể bị tách thành nhiều mảnh do occlusion hoặc lỗi segmentation, gây đếm thừa.\n\nPanoptic segmentation bổ sung instance ID cho các object dạng thing, do đó có thể phân biệt hai người ngay cả khi chúng chạm nhau.\n\n(b) Trong lần chạy này, class semantic chiếm nhiều pixel nhất trong box xe buýt là 'train'.\n\nModel có thể nhầm do domain gap giữa bus.jpg và Cityscapes, cũng như sự giống nhau về hình dạng, texture và góc nhìn giữa các loại phương tiện.",
+    "Q5": "(a) YOLO26-seg dùng prototype mask trên một lưới chung của toàn ảnh. Object nhỏ chỉ chiếm ít ô nên biên dễ bị thô.\n\nMask R-CNN tạo mask 28×28 riêng cho mỗi RoI. Với object lớn, mask 28×28 phải upscale rất nhiều nên biên có thể bị thô.\n\n(b) Nếu mỗi mask YOLO tự chọn Mask R-CNN có IoU cao nhất, nhiều mask YOLO có thể cùng chọn một mask Mask R-CNN.\n\nHungarian matching ép ghép 1-1 và tối ưu tổng IoU toàn cục, do đó tránh duplicate assignment.",
+    "Q6": "(a) Point A và B có thể tạo ra những mask khác nhau dù cùng nằm trong box của một người, vì một positive point không xác định rõ ta muốn toàn bộ person hay chỉ một phần/object chứa điểm đó.\n\nBox prompt an toàn hơn vì nó cung cấp cả vị trí và phạm vi của object, giảm tính mơ hồ.\n\n(b) Nên dùng SAM trực tiếp khi cần interactive segmentation, số ảnh ít hoặc chất lượng quan trọng hơn latency.\n\nNếu cần real-time hoặc xử lý nhiều ảnh cùng một domain, nên dùng SAM để auto-label dữ liệu, sửa nhãn, sau đó train YOLO26-seg nhỏ để inference nhanh và rẻ hơn.",
+    "Q7": "Khi không lọc theo confidence, Keypoint R-CNN vẫn lấy argmax của từng heatmap.\n\nVì vậy ngay cả đầu gối hoặc mắt cá thật sự nằm ngoài ảnh, model vẫn buộc phải trả về một tọa độ có response lớn nhất, thường ở biên RoI hoặc một vị trí không hợp lý.\n\nArgmax không có trạng thái \"không quan sát được\". Do đó mỗi keypoint cần confidence để loại những điểm bị che, ngoài khung hoặc hallucinate trước khi dùng cho luật nghiệp vụ.",
+    "Q8": "Người 40×80 px xuống dưới OKS = 0.5 ở khoảng 8 pixel sai số.\n\nNgười 250×500 px vẫn chưa xuống dưới 0.5 trong vùng đồ thị 0–30 px; nếu mở rộng thí nghiệm thì cần khoảng hơn 40 px.\n\nSigma của mắt nhỏ vì annotator có thể xác định vị trí mắt chính xác và nhất quán hơn vị trí hông.\n\nVới camera cổng mà người chỉ cao khoảng 80 pixel, chỉ vài pixel sai số ở keypoint có sigma nhỏ đã làm OKS giảm mạnh. Vì vậy cần đủ độ phân giải và phải chú ý confidence của keypoint.",
+    "Q9": "(a) False positive có thể xảy ra khi người cúi nhặt đồ, ngồi, cúi làm việc hoặc bò nhưng thân nghiêng > 60 độ.\n\nFalse negative có thể xảy ra khi người ngã theo hướng gần trùng với trục nhìn của camera nên hình chiếu thân vẫn khá thẳng đứng, hoặc vai/hông bị che khiến confidence thấp.\n\n(b) Pose model không rotation invariant hoàn toàn. Training data chủ yếu chứa người theo orientation bình thường. Xoay ảnh 90 độ tạo dữ liệu khác distribution train nên detection và keypoint confidence giảm.\n\n(c) Hệ thống thật cần tracking theo thời gian, thay đổi pose qua nhiều frame, vận tốc, trạng thái nằm kéo dài, xử lý occlusion, confidence keypoint và camera/ground-plane calibration.\n\nCó thể thêm temporal/action-recognition model để phân biệt ngã thật với cúi hoặc ngồi.",
+    "Q10": "mAP trên val hiện tại có thể không giảm rõ rệt, vì cả train gốc và val đều chỉ có hổ quay sang phải.\n\nSai flip_idx trở thành bug khi deployment có hổ quay sang trái hoặc camera nhìn từ phía đối diện.\n\nKhi đó model có thể dự đoán đúng vị trí keypoint nhưng gán nhãn left_* và right_* bị đảo.\n\nValidation hiện tại không chứa trường hợp này nên metric có thể che lỗi.",
+    "Q11": "Kiểu lỗi thứ nhất là nhầm left/right ở các chân:\nvị trí dự đoán gần đúng nhưng tên right_* và left_* bị hoán đổi.\n\nCách khắc phục là dùng FLIP_IDX giải phẫu đúng, bổ sung dữ liệu có cả hổ quay trái và quay phải, và thêm mirrored validation set.\n\nKiểu lỗi thứ hai là các keypoint chân bị che, chồng lên nhau hoặc nằm gần mép ảnh nên có sai số lớn.\n\nCó thể khắc phục bằng cách bổ sung dữ liệu occlusion/crop, augmentation phù hợp, tăng độ phân giải ảnh và bỏ qua keypoint có confidence quá thấp khi triển khai.",
+    "Q12": "Dùng cùng sigma = 1/12 cho cả 12 keypoint là một mặc định tiện lợi nhưng không hoàn toàn hợp lý.\n\nMũi, gốc đuôi, cổ chân và bàn chân có mức độ mơ hồ khi annotate khác nhau, nên cùng một sai số không nhất thiết phải bị phạt giống nhau.\n\nVới dataset custom, tôi sẽ cho nhiều annotator độc lập gán cùng một tập ảnh hoặc gán lặp lại.\n\nSau đó với từng keypoint, tính độ phân tán giữa các annotation, chuẩn hóa khoảng cách theo kích thước object như sqrt(area), rồi dùng độ lệch đó để ước lượng sigma riêng cho từng keypoint.\n\nCuối cùng kiểm tra lại sigma trên validation set để bảo đảm nó phản ánh độ mơ hồ gán nhãn thật sự."
+  },
+  "env": {
+    "device": "cuda",
+    "torch": "2.11.0+cu130",
+    "ultralytics": "8.4.171"
+  }
+}
